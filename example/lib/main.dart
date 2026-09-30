@@ -1,29 +1,53 @@
-import 'package:agnostic_split_view_example/demo_shell.dart';
+import 'package:agnostic_split_view/agnostic_split_view.dart';
+import 'package:agnostic_split_view_example/widgets/custom_divider.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const AgnosticSplitViewDemo());
-}
+/// A minimal, self-contained example of [SplitView].
+///
+/// For a full-featured, nested IDE-style layout demo with custom dividers,
+/// see [demo_shell.dart] in this directory.
+void main() => runApp(const MinimalExampleApp());
 
-class AgnosticSplitViewDemo extends StatelessWidget {
-  const AgnosticSplitViewDemo({super.key});
+class MinimalExampleApp extends StatelessWidget {
+  const MinimalExampleApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Agnostic Split View',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF08090C),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFC8FF00),
-          brightness: Brightness.dark,
+      theme: ThemeData(brightness: Brightness.dark),
+      home: Scaffold(
+        body: SplitView(
+          direction: SplitDirection.horizontal,
+          firstCollapsible: true,
+          minFirstPaneSize: 150,
+          maxFirstPaneSize: 400,
+          dividerBuilder: (context, state) => CustomDivider(state: state),
+
+          // Pane 1: Sidebar
+          first: Container(
+            color: const Color(0xFF1E1E1E),
+            child: const Center(
+              child: Text(
+                'Sidebar\n(Drag to resize or collapse)',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+
+          // Pane 2: Main Content
+          second: Container(
+            color: const Color(0xFF2D2D2D),
+            child: const Center(
+              child: Text(
+                'Main Content Area',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+          ),
         ),
-        fontFamily: 'Inter',
       ),
-      home: const DemoShell(),
     );
   }
 }
