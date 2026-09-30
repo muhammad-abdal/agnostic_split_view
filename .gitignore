@@ -1,0 +1,47 @@
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE and Editor files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.atom/
+
+# Flutter & Dart tooling / build outputs
+.dart_tool/
+.packages
+build/
+.metadata
+.flutter-plugins
+.flutter-plugins-dependencies
+doc/api/
+coverage/
+.test_coverage
+
+# Package lock file (optional for packages)
+pubspec.lock
+
+# Miscellaneous / Temp files
+*.class
+*.log
+*.pyc
+*.swp
+.buildlog/
+.history/
+.svn/
+migrate_working_dir/
+
+# Example app platform folders & metadata
+example/android/
+example/ios/
+example/linux/
+example/macos/
+example/web/
+example/windows/
+example/.metadata
+example/.dart_tool/
+example/build/
+example/pubspec.lock
