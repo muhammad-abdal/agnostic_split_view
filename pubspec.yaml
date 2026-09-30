@@ -2,6 +2,14 @@ name: agnostic_split_view
 description: "A framework-agnostic split view for Flutter. Zero Material/Cupertino
   dependencies. Headless, themable, high-performance."
 version: 0.1.0
+
+topics:
+  - split-view
+  - layout
+  - responsive
+  - flutter
+  - widgets
+
 homepage: https://github.com/muhammad-abdal/agnostic_split_view
 repository: https://github.com/muhammad-abdal/agnostic_split_view
 issue_tracker: https://github.com/muhammad-abdal/agnostic_split_view/issues
