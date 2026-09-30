@@ -24,7 +24,7 @@ this package is for you.
 - Collapsible panes with drag-threshold snapping.
 - Four layouts: left/right, right/left, top/bottom, bottom/top.
 - RTL-aware. Directionality flips horizontal layouts automatically.
-- Controller with `setFraction`, `collapseFirst`, `toggleSecond`, `reset`.
+- Controller with `setFraction`, `collapseFirst`/`collapseSecond`, `expandFirst`/`expandSecond`, `toggleFirst` `toggleSecond`, and `reset`.
 - Six divider styles: `line`, `rounded`, `floating`, `bordered`,
   `handle`, `none`. Three size presets plus `custom`.
 - Fully themable via `SplitViewTheme` (an `InheritedWidget`, not a
@@ -61,6 +61,8 @@ SplitView(
 // Later:
 controller.toggleFirst();
 ```
+
+_(Note: If you create the controller manually, remember to call `controller.dispose()` in your widget's `dispose` method.)_
 
 ### Vertical, reversed (bottom pane first)
 
@@ -104,6 +106,8 @@ SplitViewTheme.overrideWith(
   child: SplitView(...),
 )
 ```
+
+_(Note: `SplitViewTheme.overrideWith` completely replaces the theme for its subtree. It does not merge with parent `SplitViewTheme` values.)_
 
 ### Responsive sizing with `flutter_screenutil`
 
@@ -151,6 +155,19 @@ See the Dartdoc on `SplitView`, `SplitViewController`, `SplitDivider`,
 - The controller is silent during geometry updates, avoiding rebuilds
   during layout.
 
+## ⚠️ Important: Bounded Constraints
+
+`SplitView` requires bounded constraints to calculate pane sizes. If you place it inside a `Row` or `Column`, you **must** wrap it in an `Expanded`, `Flexible`, or `SizedBox` to avoid layout exceptions.
+
+```dart
+// ✅ Good: Wrapped in Expanded
+Row(
+  children: [
+    Expanded(child: SplitView(...)),
+  ],
+)
+
 ## License
 
 MIT — see `LICENSE`.
+```
