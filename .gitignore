@@ -1,30 +1,53 @@
-# Operating System files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+build/
+coverage/
+doc/api/
+
+pubspec.lock
+
+example/.dart_tool/
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
+example/.packages
+example/.pub/
+example/build/
+example/.metadata
+
+example/pubspec.lock
+
+example/android/.gradle/
+example/android/.idea/
+example/android/app/build/
+example/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+example/ios/Flutter/Generated.xcconfig
+example/ios/Flutter/flutter_export_environment.sh
+example/ios/Flutter/GeneratedPluginRegistrant.h
+example/ios/Flutter/GeneratedPluginRegistrant.m
+example/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/
+example/ios/Runner.xcodeproj/xcshareddata/
+example/ios/Runner.xcworkspace/xcshareddata/
+example/macos/Flutter/GeneratedPluginRegistrant.swift
+example/macos/Flutter/ephemeral/
+example/windows/flutter/generated_plugin_registrant.cc
+example/windows/flutter/generated_plugin_registrant.h
+example/windows/flutter/generated_plugins.cmake
+example/linux/flutter/generated_plugin_registrant.cc
+example/linux/flutter/generated_plugin_registrant.h
+example/linux/flutter/generated_plugins.cmake
+
 .DS_Store
 Thumbs.db
-
-# IDE and Editor files
 .idea/
 *.iml
 *.ipr
 *.iws
 .vscode/
 .atom/
-
-# Flutter & Dart tooling / build outputs
-.dart_tool/
-.packages
-build/
-.metadata
-.flutter-plugins
-.flutter-plugins-dependencies
-doc/api/
-coverage/
-.test_coverage
-
-# Package lock file (optional for packages)
-pubspec.lock
-
-# Miscellaneous / Temp files
 *.class
 *.log
 *.pyc
@@ -34,14 +57,11 @@ pubspec.lock
 .svn/
 migrate_working_dir/
 
-# Example app platform folders & metadata
-example/android/
-example/ios/
-example/linux/
-example/macos/
-example/web/
-example/windows/
-example/.metadata
-example/.dart_tool/
-example/build/
-example/pubspec.lock
+**/.idea/
+**/.dart_tool/
+**/build/
+**/windows/
+**/macos/
+**/linux/
+**/ios/
+**/android/
