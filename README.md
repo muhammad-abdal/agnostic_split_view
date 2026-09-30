@@ -9,6 +9,10 @@ dependencies:
   agnostic_split_view: ^0.1.0
 ```
 
+<p align="center">
+<img src="display/example_preview.gif" alt="Agnostic Split View Demo" width="100%" />
+</p>
+
 ## Why
 
 Flutter's `widgets.dart` layer is design-neutral. `material.dart` and
