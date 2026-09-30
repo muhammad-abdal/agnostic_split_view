@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Improved `example/lib/main.dart` with a clean, minimal, self-contained starting point.
+- Added demo GIF to `README.md` for better visual documentation.
+
 ## 0.1.0
 
 Initial release.

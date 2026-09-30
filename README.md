@@ -6,11 +6,11 @@ dependencies.** Works with any design system, any theme, or a bare
 
 ```yaml
 dependencies:
-  agnostic_split_view: ^0.1.0
+  agnostic_split_view: ^0.1.1
 ```
 
 <p align="center">
-<img src="display/example_preview.gif" alt="Agnostic Split View Demo" width="100%" />
+<img src="https://github.com/muhammad-abdal/agnostic_split_view/blob/main/display/example_preview.gif" alt="Agnostic Split View Demo" width="100%" />
 </p>
 
 ## Why
