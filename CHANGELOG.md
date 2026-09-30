@@ -1,3 +1,7 @@
+## 0.1.2
+
+- Fixed README image path to correctly render the demo GIF on pub.dev.
+
 ## 0.1.1
 
 - Improved `example/lib/main.dart` with a clean, minimal, self-contained starting point.

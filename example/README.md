@@ -6,8 +6,12 @@ dependencies.** Works with any design system, any theme, or a bare
 
 ```yaml
 dependencies:
-  agnostic_split_view: ^0.1.0
+  agnostic_split_view: ^0.1.2
 ```
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/muhammad-abdal/agnostic_split_view/main/display/example_preview.gif" alt="Agnostic Split View Demo" width="100%" />
+</p>
 
 ## Why
 
@@ -24,7 +28,7 @@ this package is for you.
 - Collapsible panes with drag-threshold snapping.
 - Four layouts: left/right, right/left, top/bottom, bottom/top.
 - RTL-aware. Directionality flips horizontal layouts automatically.
-- Controller with `setFraction`, `collapseFirst`, `toggleSecond`, `reset`.
+- Controller with `setFraction`, `collapseFirst`/`collapseSecond`, `expandFirst`/`expandSecond`, `toggleFirst` `toggleSecond`, and `reset`.
 - Six divider styles: `line`, `rounded`, `floating`, `bordered`,
   `handle`, `none`. Three size presets plus `custom`.
 - Fully themable via `SplitViewTheme` (an `InheritedWidget`, not a
@@ -61,6 +65,8 @@ SplitView(
 // Later:
 controller.toggleFirst();
 ```
+
+_(Note: If you create the controller manually, remember to call `controller.dispose()` in your widget's `dispose` method.)_
 
 ### Vertical, reversed (bottom pane first)
 
@@ -105,6 +111,8 @@ SplitViewTheme.overrideWith(
 )
 ```
 
+_(Note: `SplitViewTheme.overrideWith` completely replaces the theme for its subtree. It does not merge with parent `SplitViewTheme` values.)_
+
 ### Responsive sizing with `flutter_screenutil`
 
 The package does not depend on `flutter_screenutil`. Pass scaled values
@@ -143,3 +151,27 @@ runApp(
 See the Dartdoc on `SplitView`, `SplitViewController`, `SplitDivider`,
 `SplitViewTheme`, `SplitDirection`, `SplitDividerStyle`, and
 `SplitDividerSize`.
+
+## Performance notes
+
+- Fraction changes rebuild only the divider subtree, not the panes.
+- The layout pass is a single `CustomMultiChildLayout` traversal.
+- The controller is silent during geometry updates, avoiding rebuilds
+  during layout.
+
+## ⚠️ Important: Bounded Constraints
+
+`SplitView` requires bounded constraints to calculate pane sizes. If you place it inside a `Row` or `Column`, you **must** wrap it in an `Expanded`, `Flexible`, or `SizedBox` to avoid layout exceptions.
+
+```dart
+// ✅ Good: Wrapped in Expanded
+Row(
+  children: [
+    Expanded(child: SplitView(...)),
+  ],
+)
+
+## License
+
+MIT — see `LICENSE`.
+```
