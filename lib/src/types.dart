@@ -74,4 +74,12 @@ class SplitViewSlot {
 
   /// Slot for the second pane.
   static const int second = 2;
+
+  /// Slot for the platform-view shield.
+  ///
+  /// Only present in the layout tree during a shielded drag. Sits above
+  /// the panes and below the divider so it can absorb pointer events
+  /// that would otherwise reach an embedded platform view
+  /// (WebView, MapView, video player, etc.).
+  static const int shield = 3;
 }

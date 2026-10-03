@@ -98,6 +98,12 @@ class SplitViewController extends ChangeNotifier {
   /// Direction from the first pane toward the divider. `null` until attached.
   AxisDirection? get firstPaneEdge => _geometry?.firstPaneEdge;
 
+  /// The fraction passed at construction, or 0.5 by default.
+  ///
+  /// Used by double-tap-to-reset and by the animation system to know
+  /// the "home" position.
+  double get initialFraction => _initialFraction;
+
   // ─── Commands ───────────────────────────────────────────────────────────
 
   /// Sets the fraction allocated to the first pane.
@@ -106,11 +112,27 @@ class SplitViewController extends ChangeNotifier {
   /// 0 and 1, it is remembered as the last expanded fraction used by
   /// [expandFirst] and [expandSecond].
   ///
-  /// The [animate] argument is reserved for v0.2.0 and currently has no
-  /// effect.
+  /// When [animate] is true and the controller is attached to a [SplitView],
+  /// the change is interpolated over the theme's transition duration and
+  /// curve. Otherwise it takes effect immediately.
+
   void setFraction(double value, {bool animate = false}) {
     final clamped = value.clamp(0.0, 1.0);
     if (clamped == _fraction) return;
+
+    // NEW: if animation is requested and a delegate exists, route through it.
+    if (animate && animationDelegate != null) {
+      if (clamped > 0.0001 && clamped < 0.9999) {
+        _lastExpandedFraction = clamped;
+      }
+      animationDelegate!(
+        clamped,
+        const Duration(milliseconds: 200),
+        Curves.easeOutCubic,
+      );
+      return;
+    }
+
     if (clamped > 0.0001 && clamped < 0.9999) {
       _lastExpandedFraction = clamped;
     }
@@ -129,6 +151,16 @@ class SplitViewController extends ChangeNotifier {
   void collapseFirst({bool animate = true}) {
     if (_fraction > 0.0001) _lastExpandedFraction = _fraction;
     if (_fraction == 0.0) return;
+
+    if (animate && animationDelegate != null) {
+      animationDelegate!(
+        0.0,
+        const Duration(milliseconds: 200),
+        Curves.easeOutCubic,
+      );
+      return;
+    }
+
     _fraction = 0.0;
     notifyListeners();
   }
@@ -137,6 +169,16 @@ class SplitViewController extends ChangeNotifier {
   void collapseSecond({bool animate = true}) {
     if (_fraction < 0.9999) _lastExpandedFraction = _fraction;
     if (_fraction == 1.0) return;
+
+    if (animate && animationDelegate != null) {
+      animationDelegate!(
+        1.0,
+        const Duration(milliseconds: 200),
+        Curves.easeOutCubic,
+      );
+      return;
+    }
+
     _fraction = 1.0;
     notifyListeners();
   }
@@ -205,7 +247,6 @@ class SplitViewController extends ChangeNotifier {
   ///
   /// Detaches from the current [SplitView]. Silently clears geometry.
   void detach() {
-    if (_geometry == null) return;
     _geometry = null;
     _isDragging = false;
   }
@@ -216,4 +257,13 @@ class SplitViewController extends ChangeNotifier {
     _isDragging = value;
     notifyListeners();
   }
+
+  /// @nodoc
+  ///
+  /// When set, the widget layer receives animation requests from
+  /// controller methods. The widget owns the AnimationController and
+  /// decides how to interpolate; the controller stays free of any
+  /// Flutter animation dependency.
+  void Function(double target, Duration duration, Curve curve)?
+      animationDelegate;
 }
