@@ -46,3 +46,56 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+
+example/web/
+example/android/
+example/ios/
+example/macos/
+example/windows/
+example/linux/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+.atom/
+*.iml
+*.ipr
+*.iws
+*.swp
+.history/
+.svn/
+migrate_working_dir/
+
+# Language
+*.class
+*.log
+*.pyc
+*.symbols
+*.map.json
+
+# Flutter
+**/doc/api/
+**/ios/Flutter/.last_build_id
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/.widget_preview/
+
+# Web
+web/
+**/web/
+*.html
+**/*.html
+
+# Ignore everything under platform dirs
+**/windows/
+**/macos/
+**/linux/
+**/ios/
+**/android/
+**/web/
