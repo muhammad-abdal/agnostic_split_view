@@ -56,18 +56,15 @@ class SplitViewSemanticsLabels {
 
 /// Theming for [SplitView].
 ///
-/// This is a plain immutable class — **not** a [ThemeExtension] — so the
-/// package stays free of any Material or Cupertino dependency.
-///
-/// Provide it via [SplitViewTheme.overrideWith], or read the ambient one
-/// via [SplitViewTheme.of].
+/// Plain immutable class — **not** a [ThemeExtension] — so the package
+/// stays free of Material and Cupertino dependencies.
 class SplitViewTheme {
   /// Creates a theme.
   const SplitViewTheme({
     this.dividerThickness = 12.0,
     this.collapseThreshold = 0.15,
-    this.animationDuration = const Duration(milliseconds: 200),
-    this.animationCurve = Curves.easeOutCubic,
+    this.transitionDuration = const Duration(milliseconds: 200),
+    this.transitionCurve = Curves.easeOutCubic,
     this.defaultDividerStyle = SplitDividerStyle.line,
     this.defaultDividerSize = SplitDividerSize.medium,
     this.defaultDividerColor = const Color(0x1F000000),
@@ -79,7 +76,7 @@ class SplitViewTheme {
     this.resetOnDoubleTap = true,
     this.deferResize = false,
     this.shieldPlatformViews = true,
-    this.dragBarrierColor,
+    this.shieldColor,
     this.semanticsLabels = const SplitViewSemanticsLabels(),
   });
 
@@ -89,11 +86,15 @@ class SplitViewTheme {
   /// Fraction below which a drag collapses a collapsible pane.
   final double collapseThreshold;
 
-  /// Duration for programmatic animations. Reserved for v0.2.0.
-  final Duration animationDuration;
+  /// Duration of programmatic transitions.
+  ///
+  /// Pairs with [transitionCurve].
+  final Duration transitionDuration;
 
-  /// Curve for programmatic animations. Reserved for v0.2.0.
-  final Curve animationCurve;
+  /// Curve of programmatic transitions.
+  ///
+  /// Pairs with [transitionDuration].
+  final Curve transitionCurve;
 
   /// Default divider style.
   final SplitDividerStyle defaultDividerStyle;
@@ -122,14 +123,14 @@ class SplitViewTheme {
   /// Whether double-tap resets the split by default.
   final bool resetOnDoubleTap;
 
-  /// Whether to defer pane resize during drag by default. Reserved.
+  /// Whether panes freeze during drag by default.
   final bool deferResize;
 
-  /// Whether to shield platform views during drag by default. Reserved.
+  /// Whether to shield platform views during drag by default.
   final bool shieldPlatformViews;
 
-  /// Optional barrier color rendered during drag. Reserved.
-  final Color? dragBarrierColor;
+  /// Tint color of the shield barrier. Null → invisible.
+  final Color? shieldColor;
 
   /// Accessibility labels.
   final SplitViewSemanticsLabels semanticsLabels;
@@ -156,8 +157,8 @@ class SplitViewTheme {
   SplitViewTheme copyWith({
     double? dividerThickness,
     double? collapseThreshold,
-    Duration? animationDuration,
-    Curve? animationCurve,
+    Duration? transitionDuration,
+    Curve? transitionCurve,
     SplitDividerStyle? defaultDividerStyle,
     SplitDividerSize? defaultDividerSize,
     Color? defaultDividerColor,
@@ -169,14 +170,14 @@ class SplitViewTheme {
     bool? resetOnDoubleTap,
     bool? deferResize,
     bool? shieldPlatformViews,
-    Color? dragBarrierColor,
+    Color? shieldColor,
     SplitViewSemanticsLabels? semanticsLabels,
   }) {
     return SplitViewTheme(
       dividerThickness: dividerThickness ?? this.dividerThickness,
       collapseThreshold: collapseThreshold ?? this.collapseThreshold,
-      animationDuration: animationDuration ?? this.animationDuration,
-      animationCurve: animationCurve ?? this.animationCurve,
+      transitionDuration: transitionDuration ?? this.transitionDuration,
+      transitionCurve: transitionCurve ?? this.transitionCurve,
       defaultDividerStyle: defaultDividerStyle ?? this.defaultDividerStyle,
       defaultDividerSize: defaultDividerSize ?? this.defaultDividerSize,
       defaultDividerColor: defaultDividerColor ?? this.defaultDividerColor,
@@ -192,7 +193,7 @@ class SplitViewTheme {
       resetOnDoubleTap: resetOnDoubleTap ?? this.resetOnDoubleTap,
       deferResize: deferResize ?? this.deferResize,
       shieldPlatformViews: shieldPlatformViews ?? this.shieldPlatformViews,
-      dragBarrierColor: dragBarrierColor ?? this.dragBarrierColor,
+      shieldColor: shieldColor ?? this.shieldColor,
       semanticsLabels: semanticsLabels ?? this.semanticsLabels,
     );
   }
@@ -203,8 +204,8 @@ class SplitViewTheme {
       other is SplitViewTheme &&
           dividerThickness == other.dividerThickness &&
           collapseThreshold == other.collapseThreshold &&
-          animationDuration == other.animationDuration &&
-          animationCurve == other.animationCurve &&
+          transitionDuration == other.transitionDuration &&
+          transitionCurve == other.transitionCurve &&
           defaultDividerStyle == other.defaultDividerStyle &&
           defaultDividerSize == other.defaultDividerSize &&
           defaultDividerColor == other.defaultDividerColor &&
@@ -216,15 +217,15 @@ class SplitViewTheme {
           resetOnDoubleTap == other.resetOnDoubleTap &&
           deferResize == other.deferResize &&
           shieldPlatformViews == other.shieldPlatformViews &&
-          dragBarrierColor == other.dragBarrierColor &&
+          shieldColor == other.shieldColor &&
           semanticsLabels == other.semanticsLabels;
 
   @override
   int get hashCode => Object.hash(
         dividerThickness,
         collapseThreshold,
-        animationDuration,
-        animationCurve,
+        transitionDuration,
+        transitionCurve,
         defaultDividerStyle,
         defaultDividerSize,
         defaultDividerColor,
@@ -236,7 +237,7 @@ class SplitViewTheme {
         resetOnDoubleTap,
         deferResize,
         shieldPlatformViews,
-        dragBarrierColor,
+        shieldColor,
         semanticsLabels,
       );
 }

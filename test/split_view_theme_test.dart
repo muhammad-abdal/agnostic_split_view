@@ -274,10 +274,10 @@ void main() {
       const original = SplitViewTheme();
       final updated = original.copyWith(
         defaultDividerHoverColor: const Color(0xFFFF0000),
-        dragBarrierColor: const Color(0x88000000),
+        shieldColor: const Color(0x88000000),
       );
       expect(updated.defaultDividerHoverColor, const Color(0xFFFF0000));
-      expect(updated.dragBarrierColor, const Color(0x88000000));
+      expect(updated.shieldColor, const Color(0x88000000));
     });
 
     test('copyWith on divider style/size', () {
@@ -293,11 +293,11 @@ void main() {
     test('copyWith on animation settings', () {
       const original = SplitViewTheme();
       final updated = original.copyWith(
-        animationDuration: const Duration(milliseconds: 400),
-        animationCurve: Curves.linear,
+        transitionDuration: const Duration(milliseconds: 400),
+        transitionCurve: Curves.linear,
       );
-      expect(updated.animationDuration, const Duration(milliseconds: 400));
-      expect(updated.animationCurve, Curves.linear);
+      expect(updated.transitionDuration, const Duration(milliseconds: 400));
+      expect(updated.transitionCurve, Curves.linear);
     });
 
     test('copyWith does not mutate the original', () {
@@ -314,8 +314,8 @@ void main() {
       const t = SplitViewTheme.defaultTheme;
       expect(t.dividerThickness, 12.0);
       expect(t.collapseThreshold, 0.15);
-      expect(t.animationDuration, const Duration(milliseconds: 200));
-      expect(t.animationCurve, Curves.easeOutCubic);
+      expect(t.transitionDuration, const Duration(milliseconds: 200));
+      expect(t.transitionCurve, Curves.easeOutCubic);
       expect(t.defaultDividerStyle, SplitDividerStyle.line);
       expect(t.defaultDividerSize, SplitDividerSize.medium);
       expect(t.defaultDividerColor, const Color(0x1F000000));

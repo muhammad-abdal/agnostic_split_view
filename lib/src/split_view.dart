@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 import 'split_divider.dart';
@@ -34,16 +36,18 @@ class SplitView extends StatefulWidget {
     this.resetOnDoubleTap,
     this.deferResize,
     this.shieldPlatformViews,
-    this.dragBarrierColor,
-    this.animationDuration,
-    this.animationCurve,
+    this.shieldColor,
+    this.transitionDuration,
+    this.transitionCurve,
     this.semanticLabel,
+    this.isolatePanes = false,
   });
 
   /// Orientation of the split.
   final SplitDirection direction;
 
-  /// Leading pane.
+  /// Leading pane. Position depends on [direction], [reverse], and
+  /// ambient [Directionality].
   final Widget first;
 
   /// Trailing pane.
@@ -52,10 +56,10 @@ class SplitView extends StatefulWidget {
   /// Swaps which pane occupies the leading side.
   final bool reverse;
 
-  /// Optional controller.
+  /// Optional controller. If null, an internal one is created.
   final SplitViewController? controller;
 
-  /// Initial fraction given to [first].
+  /// Initial fraction given to [first]. Ignored when [controller] is set.
   final double initialFraction;
 
   /// Minimum pixel size of the first pane.
@@ -106,23 +110,53 @@ class SplitView extends StatefulWidget {
   /// Whether double-tap resets the split.
   final bool? resetOnDoubleTap;
 
-  /// v0.2.0 — When true, panes freeze during drag and snap on release.
-  /// The divider still moves at the display's native frame rate.
+  /// Whether to wrap the panes and divider in RepaintBoundary widgets.
+  ///
+  /// Enabling this isolates repaints when pane content is complex.
+  /// However, in deeply nested SplitView trees (like IDEs), enabling
+  /// this can cause a "layer explosion," increasing GPU overhead.
+  final bool isolatePanes;
+
+  /// v0.2.0
+  ///  When true, panes freeze during drag and snap on release.
+  ///
+  /// The divider continues to move at the display's frame rate. Pane
+  /// content is not laid out until the drag ends, which avoids the cost
+  /// of rebuilding expensive subtrees (WebViews, MapViews, charts) on
+  /// every frame.
   final bool? deferResize;
 
-  /// v0.2.0 — When true, an invisible barrier sits above the panes
-  /// during a drag, absorbing pointer events that would otherwise
-  /// reach an embedded platform view (WebView, MapView, video).
+  /// v0.2.0
+  ///  When true, an invisible [AbsorbPointer] sits above the
+  /// panes during a drag.
+  ///
+  /// This prevents embedded platform views (WebView, MapView, video
+  /// players) from stealing pointer events mid-drag. The shield is only
+  /// present in the layout tree while a drag is in progress.
   final bool? shieldPlatformViews;
 
-  /// v0.2.0 — Color of the shield barrier. Null → fully transparent.
-  final Color? dragBarrierColor;
+  /// v0.2.0
+  ///  Tint color of the shield barrier.
+  ///
+  /// Null (the default) renders an invisible barrier that still absorbs
+  /// pointer events. A non-null value paints the barrier with that
+  /// color, useful for signalling to the user that a drag is in
+  /// progress.
+  final Color? shieldColor;
 
-  /// v0.2.0 — Duration of programmatic animations.
-  final Duration? animationDuration;
+  /// v0.2.0
+  ///  Duration of programmatic transitions.
+  ///
+  /// Used by `setFraction(animate: true)`, `collapseFirst(animate: true)`,
+  /// `toggleFirst(animate: true)`, `reset(animate: true)`, and
+  /// double-tap-to-reset. Null → theme default.
+  final Duration? transitionDuration;
 
-  /// v0.2.0 — Curve of programmatic animations.
-  final Curve? animationCurve;
+  /// v0.2.0
+  ///  Curve of programmatic transitions.
+  ///
+  /// Pairs with [transitionDuration]. Null → theme default.
+  final Curve? transitionCurve;
 
   /// Accessibility label override.
   final String? semanticLabel;
@@ -138,10 +172,12 @@ class _SplitViewState extends State<SplitView>
   bool _isHovered = false;
   bool _isFocused = false;
 
-  // v0.2.0 — Deferred resize: frozen pane fraction during drag.
+  // v0.2.0
+  // Deferred resize: frozen pane fraction during drag.
   double _appliedFraction = 0.5;
 
-  // v0.2.0 — Animation controller for programmatic changes.
+  // v0.2.0
+  // Animation controller for programmatic changes.
   late final AnimationController _animController;
   Animation<double>? _fractionAnim;
 
@@ -194,7 +230,8 @@ class _SplitViewState extends State<SplitView>
       );
       _ownsController = true;
     }
-    // v0.2.0 — route controller animate:true calls through our animator.
+    // v0.2.0
+    // route controller animate:true calls through our animator.
     _controller.animationDelegate = (target, duration, curve) {
       _animateTo(target: target, duration: duration, curve: curve);
     };
@@ -222,7 +259,7 @@ class _SplitViewState extends State<SplitView>
       ..forward(from: 0);
   }
 
-  // ─── Direction resolution (unchanged from v0.1.2) ────────────────────
+  //  Direction resolution (unchanged from v0.1.x)
 
   bool _resolveFirstIsLeading(BuildContext context) {
     if (widget.direction == SplitDirection.vertical) {
@@ -254,7 +291,8 @@ class _SplitViewState extends State<SplitView>
     return firstIsLeading ? 1.0 : -1.0;
   }
 
-  // v0.2.0 — Returns the fraction panes should currently be laid out at.
+  // v0.2.0
+  // Returns the fraction panes should currently be laid out at.
   double _effectiveAppliedFraction({required bool deferring}) {
     if (deferring && _controller.isDragging) {
       return _appliedFraction;
@@ -262,12 +300,13 @@ class _SplitViewState extends State<SplitView>
     return _controller.fraction;
   }
 
-  // ─── Gesture handling ────────────────────────────────────────────────
+  //  Gesture handling
 
   void _onDragStart({required bool deferring}) {
     _animController.stop(); // v0.2.0 — cancel any in-flight animation
     if (deferring) {
-      _appliedFraction = _controller.fraction; // v0.2.0 — freeze panes
+      _appliedFraction =
+          _controller.fraction; // v0.2.0 — freeze panes (if true)
     }
     _controller.setDragging(true);
     widget.onDragStart?.call();
@@ -306,7 +345,12 @@ class _SplitViewState extends State<SplitView>
     widget.onDragEnd?.call();
   }
 
-  // ─── Build ────────────────────────────────────────────────────────────
+  //
+  Widget _wrapIfIsolated(Widget child) {
+    return widget.isolatePanes ? RepaintBoundary(child: child) : child;
+  }
+
+  //  Build
 
   @override
   Widget build(BuildContext context) {
@@ -323,12 +367,14 @@ class _SplitViewState extends State<SplitView>
     final collapseThreshold =
         widget.collapseThreshold ?? theme.collapseThreshold;
 
-    // v0.2.0 — resolve the five new features from widget or theme.
+    // v0.2.0
+    // resolve the five new features from widget or theme.
     final deferring = widget.deferResize ?? theme.deferResize;
     final shielding = widget.shieldPlatformViews ?? theme.shieldPlatformViews;
-    final barrierColor = widget.dragBarrierColor ?? theme.dragBarrierColor;
-    final animDuration = widget.animationDuration ?? theme.animationDuration;
-    final animCurve = widget.animationCurve ?? theme.animationCurve;
+    final shieldColor = widget.shieldColor ?? theme.shieldColor;
+    final transitionDuration =
+        widget.transitionDuration ?? theme.transitionDuration;
+    final transitionCurve = widget.transitionCurve ?? theme.transitionCurve;
 
     final controller = _controller;
 
@@ -340,14 +386,50 @@ class _SplitViewState extends State<SplitView>
         final availableSize =
             (totalSize - dividerThickness).clamp(0.0, double.infinity);
 
-        final minFirstFraction =
-            (widget.minFirstPaneSize <= 0 || availableSize <= 0)
-                ? 0.0
-                : (widget.minFirstPaneSize / availableSize).clamp(0.0, 1.0);
-        final maxFirstFraction =
-            (widget.maxFirstPaneSize >= availableSize || availableSize <= 0)
-                ? 1.0
-                : (widget.maxFirstPaneSize / availableSize).clamp(0.0, 1.0);
+        // final minFirstFraction =
+        //     (widget.minFirstPaneSize <= 0 || availableSize <= 0)
+        //         ? 0.0
+        //         : (widget.minFirstPaneSize / availableSize).clamp(0.0, 1.0);
+        // final maxFirstFraction =
+        //     (widget.maxFirstPaneSize >= availableSize || availableSize <= 0)
+        //         ? 1.0
+        //         : (widget.maxFirstPaneSize / availableSize).clamp(0.0, 1.0);
+
+        double minFirstFraction = 0.0;
+        double maxFirstFraction = 1.0;
+
+        if (availableSize > 0) {
+          // Constraints from the first pane
+          if (widget.minFirstPaneSize > 0) {
+            minFirstFraction = math.max(
+              minFirstFraction,
+              widget.minFirstPaneSize / availableSize,
+            );
+          }
+          if (widget.maxFirstPaneSize < availableSize) {
+            maxFirstFraction = math.min(
+              maxFirstFraction,
+              widget.maxFirstPaneSize / availableSize,
+            );
+          }
+
+          // Constraints from the second pane
+          if (widget.minSecondPaneSize > 0) {
+            maxFirstFraction = math.min(
+              maxFirstFraction,
+              1.0 - (widget.minSecondPaneSize / availableSize),
+            );
+          }
+          if (widget.maxSecondPaneSize < availableSize) {
+            minFirstFraction = math.max(
+              minFirstFraction,
+              1.0 - (widget.maxSecondPaneSize / availableSize),
+            );
+          }
+        }
+
+        minFirstFraction = minFirstFraction.clamp(0.0, 1.0);
+        maxFirstFraction = maxFirstFraction.clamp(0.0, 1.0);
 
         controller.attach(
           direction: widget.direction,
@@ -393,10 +475,13 @@ class _SplitViewState extends State<SplitView>
                         boxShadow: theme.defaultDividerBoxShadow,
                       );
 
-              // v0.2.0 — assemble children. The shield slot is only
+              // v0.2.0 - assemble children. The shield slot is only
               // present while a shielded drag is active.
               final children = <Widget>[
-                LayoutId(id: SplitViewSlot.first, child: widget.first),
+                LayoutId(
+                  id: SplitViewSlot.first,
+                  child: _wrapIfIsolated(widget.first),
+                ),
                 LayoutId(
                   id: SplitViewSlot.divider,
                   child: GestureDetector(
@@ -440,8 +525,8 @@ class _SplitViewState extends State<SplitView>
                     onDoubleTap: resetOnDoubleTap && enabled
                         ? () => _animateTo(
                               target: controller.initialFraction,
-                              duration: animDuration,
-                              curve: animCurve,
+                              duration: transitionDuration,
+                              curve: transitionCurve,
                             )
                         : null,
                     child: MouseRegion(
@@ -463,16 +548,22 @@ class _SplitViewState extends State<SplitView>
                     ),
                   ),
                 ),
-                LayoutId(id: SplitViewSlot.second, child: widget.second),
+                LayoutId(
+                  id: SplitViewSlot.second,
+                  child: _wrapIfIsolated(widget.second),
+                ),
 
-                // v0.2.0 — platform-view shield, only during shielded drags.
+                // v0.2.0
+                // platform-view shield, only during shielded drags.
                 if (shielding && isDragging)
                   LayoutId(
                     id: SplitViewSlot.shield,
-                    child: AbsorbPointer(
-                      child: barrierColor != null
-                          ? ColoredBox(color: barrierColor)
-                          : const SizedBox.expand(),
+                    child: _wrapIfIsolated(
+                      AbsorbPointer(
+                        child: shieldColor != null
+                            ? ColoredBox(color: shieldColor)
+                            : const SizedBox.expand(),
+                      ),
                     ),
                   ),
               ];
@@ -502,8 +593,8 @@ class _SplitViewState extends State<SplitView>
 class _SplitLayoutDelegate extends MultiChildLayoutDelegate {
   _SplitLayoutDelegate({
     required this.direction,
-    required this.visualFraction, // v0.2.0 — for divider
-    required this.appliedFraction, // v0.2.0 — for panes
+    required this.visualFraction,
+    required this.appliedFraction,
     required this.dividerThickness,
     required this.firstIsLeading,
     required this.minFirstSize,
@@ -530,22 +621,75 @@ class _SplitLayoutDelegate extends MultiChildLayoutDelegate {
     final availableSize =
         (totalSize - dividerThickness).clamp(0.0, double.infinity);
 
-    // v0.2.0 — panes are sized from appliedFraction, not visualFraction.
+    // // Calculate base sizes from applied fraction
+    // double firstSize = availableSize * appliedFraction;
+    // double secondSize = availableSize - firstSize;
+
+    // //  Check for explicit collapse (fraction is effectively 0 or 1)
+    // final bool isFirstCollapsed = appliedFraction <= 0.0001;
+    // final bool isSecondCollapsed = appliedFraction >= 0.9999;
+
+    // //  Apply min/max constraints ONLY if the pane is NOT explicitly collapsed
+    // if (!isFirstCollapsed && firstSize < minFirstSize) {
+    //   firstSize = minFirstSize;
+    // }
+    // if (!isFirstCollapsed && firstSize > maxFirstSize) {
+    //   firstSize = maxFirstSize;
+    // }
+
+    // // Recalculate second size based on adjusted first size
+    // secondSize = availableSize - firstSize;
+
+    // if (!isSecondCollapsed && secondSize < minSecondSize) {
+    //   secondSize = minSecondSize;
+    //   firstSize = availableSize - secondSize;
+    // }
+    // if (!isSecondCollapsed && secondSize > maxSecondSize) {
+    //   secondSize = maxSecondSize;
+    //   firstSize = availableSize - secondSize;
+    // }
+
+    // // Final hard clamp to ensure no negative sizes or overflow
+    // firstSize = firstSize.clamp(0.0, availableSize);
+    // secondSize = secondSize.clamp(0.0, availableSize);
+
+    // Calculate base sizes from applied fraction
     double firstSize = availableSize * appliedFraction;
     double secondSize = availableSize - firstSize;
 
-    if (firstSize < minFirstSize) firstSize = minFirstSize;
-    if (firstSize > maxFirstSize) firstSize = maxFirstSize;
-    if (firstSize > availableSize) firstSize = availableSize;
-    secondSize = availableSize - firstSize;
-    if (secondSize < minSecondSize) {
-      secondSize = minSecondSize;
-      firstSize = availableSize - secondSize;
+    //  Check for explicit collapse (fraction is effectively 0 or 1)
+    final bool isFirstCollapsed = appliedFraction <= 0.0001;
+    final bool isSecondCollapsed = appliedFraction >= 0.9999;
+
+    if (isFirstCollapsed) {
+      firstSize = 0.0;
+      secondSize = availableSize;
+    } else if (isSecondCollapsed) {
+      firstSize = availableSize;
+      secondSize = 0.0;
+    } else {
+      //  Apply min/max constraints ONLY if NEITHER pane is explicitly collapsed
+      if (firstSize < minFirstSize) {
+        firstSize = minFirstSize;
+      }
+      if (firstSize > maxFirstSize) {
+        firstSize = maxFirstSize;
+      }
+
+      // Recalculate second size based on adjusted first size
+      secondSize = availableSize - firstSize;
+
+      if (secondSize < minSecondSize) {
+        secondSize = minSecondSize;
+        firstSize = availableSize - secondSize;
+      }
+      if (secondSize > maxSecondSize) {
+        secondSize = maxSecondSize;
+        firstSize = availableSize - secondSize;
+      }
     }
-    if (secondSize > maxSecondSize) {
-      secondSize = maxSecondSize;
-      firstSize = availableSize - secondSize;
-    }
+
+    // Final hard clamp to ensure no negative sizes or overflow
     firstSize = firstSize.clamp(0.0, availableSize);
     secondSize = secondSize.clamp(0.0, availableSize);
 
@@ -563,7 +707,6 @@ class _SplitLayoutDelegate extends MultiChildLayoutDelegate {
     layoutChild(SplitViewSlot.divider, dividerConstraints);
     layoutChild(SplitViewSlot.second, secondConstraints);
 
-    // v0.2.0 — pane positions from appliedFraction.
     final double firstPanePos;
     final double secondPanePos;
     if (firstIsLeading) {
@@ -574,7 +717,7 @@ class _SplitLayoutDelegate extends MultiChildLayoutDelegate {
       firstPanePos = secondSize + dividerThickness;
     }
 
-    // v0.2.0 — divider position from visualFraction.
+    // Divider position is always based on visualFraction (so it moves smoothly during deferResize)
     final visualFirstSize = availableSize * visualFraction;
     final dividerPos =
         firstIsLeading ? visualFirstSize : availableSize - visualFirstSize;
@@ -589,7 +732,6 @@ class _SplitLayoutDelegate extends MultiChildLayoutDelegate {
       positionChild(SplitViewSlot.second, Offset(0, secondPanePos));
     }
 
-    // v0.2.0 — the shield, if present, covers the entire area.
     if (hasChild(SplitViewSlot.shield)) {
       layoutChild(
         SplitViewSlot.shield,
