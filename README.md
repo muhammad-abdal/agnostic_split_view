@@ -6,7 +6,7 @@ dependencies.** Works with any design system, any theme, or a bare
 
 ```yaml
 dependencies:
-  agnostic_split_view: ^0.1.2
+  agnostic_split_view: ^0.2.0
 ```
 
 <p align="center">
@@ -152,26 +152,27 @@ See the Dartdoc on `SplitView`, `SplitViewController`, `SplitDivider`,
 `SplitViewTheme`, `SplitDirection`, `SplitDividerStyle`, and
 `SplitDividerSize`.
 
-## Performance notes
+## Performance
 
-- Fraction changes rebuild only the divider subtree, not the panes.
-- The layout pass is a single `CustomMultiChildLayout` traversal.
-- The controller is silent during geometry updates, avoiding rebuilds
-  during layout.
+`SplitView` gives you three opt-in features for expensive pane content.
+Each is designed for a specific scenario, and the defaults are chosen to
+avoid surprises.
 
-## ⚠️ Important: Bounded Constraints
+### `deferResize`
 
-`SplitView` requires bounded constraints to calculate pane sizes. If you place it inside a `Row` or `Column`, you **must** wrap it in an `Expanded`, `Flexible`, or `SizedBox` to avoid layout exceptions.
+Freeze pane layout during drag; only the divider moves at frame rate.
+Panes snap into place on release.
 
 ```dart
-// ✅ Good: Wrapped in Expanded
-Row(
-  children: [
-    Expanded(child: SplitView(...)),
-  ],
+SplitView(
+  direction: SplitDirection.horizontal,
+  deferResize: true,
+  first: const MyHeavyList(),
+  second: const MyEditor(),
 )
+
+```
 
 ## License
 
-MIT — see `LICENSE`.
-```
+MIT — see [LICENSE](https://github.com/muhammad-abdal/agnostic_split_view/blob/main/LICENSE).
