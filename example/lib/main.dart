@@ -1,6 +1,5 @@
 import 'package:agnostic_split_view/agnostic_split_view.dart';
 import 'package:agnostic_split_view_example/benchmark.dart';
-import 'package:agnostic_split_view_example/example_0.2.dart';
 import 'package:agnostic_split_view_example/widgets/custom_divider.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +23,7 @@ class MinimalExampleApp extends StatelessWidget {
       routes: {
         '/benchmark': (_) => const BenchmarkPage(),
       },
-      home: const DemoApp(),
+      home: const _Home(),
     );
   }
 }
