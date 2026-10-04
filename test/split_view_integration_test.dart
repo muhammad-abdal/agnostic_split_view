@@ -112,7 +112,7 @@ void main() {
       for (final reverse in [false, true]) {
         for (final axis in [
           SplitDirection.horizontal,
-          SplitDirection.vertical
+          SplitDirection.vertical,
         ]) {
           testWidgets('dir=$dir reverse=$reverse axis=$axis', (tester) async {
             await tester.pumpWidget(

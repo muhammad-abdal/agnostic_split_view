@@ -79,7 +79,7 @@ void main() {
       final c = SplitViewController(initialFraction: 1.0);
       var notifications = 0;
       c.addListener(() => notifications++);
-      c.setFraction(2.0); // clamps to 1.0, same as current
+      c.setFraction(2.0);
       expect(notifications, 0);
       c.dispose();
     });
@@ -94,11 +94,111 @@ void main() {
       expect(notifications, 3);
       c.dispose();
     });
+  });
 
-    test('animates flag is accepted but is a no-op in v0.1.2', () {
+  // ─── v0.2.0 — animate flag and animation delegate ────────────────────
+
+  // ─── v0.2.0 — animate flag and animation delegate ────────────────────
+
+  group('setFraction(animate: true)', () {
+    test('immediate set when no animation delegate is installed', () {
       final c = SplitViewController(initialFraction: 0.5);
       c.setFraction(0.8, animate: true);
       expect(c.fraction, 0.8);
+      c.dispose();
+    });
+
+    test('invokes delegate with the target when animate:true', () {
+      final c = SplitViewController(initialFraction: 0.5);
+      double? target;
+
+      c.animationDelegate = (t, _, __) => target = t;
+
+      c.setFraction(0.9, animate: true);
+
+      expect(target, 0.9);
+      c.dispose();
+    });
+
+    test('delegate receives clamped target for over-range input', () {
+      final c = SplitViewController(initialFraction: 0.5);
+      double? target;
+      c.animationDelegate = (t, _, __) => target = t;
+
+      c.setFraction(1.5, animate: true);
+      expect(target, 1.0);
+      c.dispose();
+    });
+
+    test('delegate receives clamped target for under-range input', () {
+      final c = SplitViewController(initialFraction: 0.5);
+      double? target;
+      c.animationDelegate = (t, _, __) => target = t;
+
+      c.setFraction(-0.5, animate: true);
+      expect(target, 0.0);
+      c.dispose();
+    });
+
+    test('animate:false bypasses the delegate and sets immediately', () {
+      final c = SplitViewController(initialFraction: 0.5);
+      var delegateCalled = false;
+      c.animationDelegate = (_, __, ___) => delegateCalled = true;
+
+      c.setFraction(0.7, animate: false);
+      expect(c.fraction, 0.7);
+      expect(delegateCalled, false);
+      c.dispose();
+    });
+
+    test('collapseFirst(animate: true) routes through the delegate', () {
+      final c = SplitViewController(initialFraction: 0.5);
+      double? target;
+      c.animationDelegate = (t, _, __) => target = t;
+
+      c.collapseFirst(animate: true);
+      expect(target, 0.0);
+      c.dispose();
+    });
+
+    test('collapseSecond(animate: true) routes through the delegate', () {
+      final c = SplitViewController(initialFraction: 0.5);
+      double? target;
+      c.animationDelegate = (t, _, __) => target = t;
+
+      c.collapseSecond(animate: true);
+      expect(target, 1.0);
+      c.dispose();
+    });
+
+    test('reset(animate: true) routes through the delegate', () {
+      final c = SplitViewController(initialFraction: 0.4);
+      c.setFraction(0.9);
+      double? target;
+      c.animationDelegate = (t, _, __) => target = t;
+
+      c.reset(animate: true);
+      expect(target, 0.4);
+      c.dispose();
+    });
+
+    test('toggleFirst(animate: true) routes through the delegate', () {
+      final c = SplitViewController(initialFraction: 0.5);
+      double? target;
+      c.animationDelegate = (t, _, __) => target = t;
+
+      c.toggleFirst(animate: true);
+      expect(target, 0.0);
+      c.dispose();
+    });
+
+    test('toggleSecond(animate: true) routes through the delegate', () {
+      final c = SplitViewController(initialFraction: 0.5);
+      double? target;
+      c.animationDelegate = (t, _, __) => target = t;
+
+      c.toggleSecond(animate: true);
+      expect(target, 1.0);
       c.dispose();
     });
   });
@@ -227,7 +327,7 @@ void main() {
 
     test('falls back to initial fraction when never expanded', () {
       final c = SplitViewController(initialFraction: 0.4);
-      c.collapseFirst(); // captures 0.4 as last expanded
+      c.collapseFirst();
       c.expandFirst();
       expect(c.fraction, 0.4);
       c.dispose();
@@ -511,7 +611,6 @@ void main() {
         availableSize: 400,
         dividerThickness: 12,
       );
-      // Re-attach with identical values.
       c.attach(
         direction: SplitDirection.horizontal,
         reverse: false,
@@ -616,7 +715,7 @@ void main() {
 
   // ─── Post-dispose behavior ───────────────────────────────────────────
 
-  group('Post-dispose behavior (v0.1.2)', () {
+  group('Post-dispose behavior', () {
     test('fraction is still readable after dispose', () {
       final c = SplitViewController(initialFraction: 0.42);
       c.dispose();
@@ -626,17 +725,14 @@ void main() {
     test('same-value setFraction after dispose is safe', () {
       final c = SplitViewController(initialFraction: 0.5);
       c.dispose();
-      // Same value, so no notifyListeners call, so no debug assert.
       c.setFraction(0.5);
       expect(c.fraction, 0.5);
     });
 
-    test('isDragging is false after dispose', () {
+    test('isDragging remains true after dispose if it was set', () {
       final c = SplitViewController();
       c.setDragging(true);
       c.dispose();
-      // Can't call setDragging(false) safely after dispose, but state is
-      // still readable.
       expect(c.isDragging, true);
     });
   });
@@ -671,8 +767,6 @@ void main() {
       c.collapseFirst();
       c.collapseSecond();
       c.expandFirst();
-      // expandFirst after collapseSecond: fraction is 1.0, not 0.
-      // expandFirst is a no-op when not collapsed.
       expect(c.fraction, 1.0);
       c.dispose();
     });

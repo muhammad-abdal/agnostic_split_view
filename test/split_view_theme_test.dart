@@ -117,7 +117,6 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      // Drag well below the threshold.
       await dragDivider(tester, const Offset(-200, 0));
       expect(controller.isFirstCollapsed, true);
       controller.dispose();
@@ -166,8 +165,98 @@ void main() {
       await tester.tap(find.byType(SplitDivider));
       await tester.tap(find.byType(SplitDivider));
       await tester.pumpAndSettle(const Duration(milliseconds: 400));
-      // Should stay at 0.8 because reset is disabled.
       expect(controller.fraction, closeTo(0.8, 0.001));
+      controller.dispose();
+    });
+
+    // v0.2.0 — new theme field coverage.
+
+    testWidgets('deferResize falls back to theme', (tester) async {
+      final controller = SplitViewController(initialFraction: 0.5);
+      await tester.pumpWidget(
+        wrap(
+          SplitViewTheme.overrideWith(
+            data: const SplitViewTheme(deferResize: true),
+            child: SplitView(
+              direction: SplitDirection.horizontal,
+              controller: controller,
+              first: const SizedBox(key: kFirstKey),
+              second: const SizedBox(key: kSecondKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final before = firstRect(tester).width;
+      final gesture = await startDividerDrag(tester);
+      await moveDragInSteps(tester, gesture, const Offset(80, 0));
+
+      expect(
+        firstRect(tester).width,
+        equals(before),
+        reason: 'Theme-level deferResize:true must freeze panes.',
+      );
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+      controller.dispose();
+    });
+
+    testWidgets('shieldPlatformViews falls back to theme', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          SplitViewTheme.overrideWith(
+            data: const SplitViewTheme(shieldPlatformViews: false),
+            child: const SplitView(
+              direction: SplitDirection.horizontal,
+              first: SizedBox(),
+              second: SizedBox(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final gesture = await startDividerDrag(tester);
+      await moveDragInSteps(tester, gesture, const Offset(40, 0));
+
+      expect(
+        find.byType(AbsorbPointer),
+        findsNothing,
+        reason: 'Theme-level shieldPlatformViews:false disables the shield.',
+      );
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('transitionDuration falls back to theme', (tester) async {
+      final controller = SplitViewController(initialFraction: 0.5);
+      await tester.pumpWidget(
+        wrap(
+          SplitViewTheme.overrideWith(
+            data: const SplitViewTheme(
+              transitionDuration: Duration(milliseconds: 100),
+              transitionCurve: Curves.linear,
+            ),
+            child: SplitView(
+              direction: SplitDirection.horizontal,
+              controller: controller,
+              first: const SizedBox(),
+              second: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      controller.setFraction(0.9, animate: true);
+
+      // Let the theme-driven 100 ms transition run to completion.
+      await tester.pumpAndSettle();
+
+      expect(controller.fraction, closeTo(0.9, 0.001));
       controller.dispose();
     });
   });
@@ -198,6 +287,26 @@ void main() {
     test('differing boolean fields are !=', () {
       const a = SplitViewTheme(deferResize: true);
       const b = SplitViewTheme(deferResize: false);
+      expect(a, isNot(b));
+    });
+
+    test('differing shieldColor are !=', () {
+      const a = SplitViewTheme();
+      const b = SplitViewTheme(shieldColor: Color(0xFF000000));
+      expect(a, isNot(b));
+    });
+
+    test('differing transitionDuration are !=', () {
+      const a = SplitViewTheme();
+      const b = SplitViewTheme(
+        transitionDuration: Duration(milliseconds: 500),
+      );
+      expect(a, isNot(b));
+    });
+
+    test('differing transitionCurve are !=', () {
+      const a = SplitViewTheme(transitionCurve: Curves.linear);
+      const b = SplitViewTheme(transitionCurve: Curves.easeIn);
       expect(a, isNot(b));
     });
 
@@ -237,6 +346,25 @@ void main() {
         ),
       );
       expect(a, isNot(b));
+    });
+
+    test('equal themes with all v0.2.0 fields share hashCode', () {
+      const a = SplitViewTheme(
+        deferResize: true,
+        shieldPlatformViews: false,
+        shieldColor: Color(0x88000000),
+        transitionDuration: Duration(milliseconds: 300),
+        transitionCurve: Curves.easeInOut,
+      );
+      const b = SplitViewTheme(
+        deferResize: true,
+        shieldPlatformViews: false,
+        shieldColor: Color(0x88000000),
+        transitionDuration: Duration(milliseconds: 300),
+        transitionCurve: Curves.easeInOut,
+      );
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
     });
   });
 
@@ -290,7 +418,7 @@ void main() {
       expect(updated.defaultDividerSize, SplitDividerSize.large);
     });
 
-    test('copyWith on animation settings', () {
+    test('copyWith on transition settings', () {
       const original = SplitViewTheme();
       final updated = original.copyWith(
         transitionDuration: const Duration(milliseconds: 400),
@@ -298,6 +426,28 @@ void main() {
       );
       expect(updated.transitionDuration, const Duration(milliseconds: 400));
       expect(updated.transitionCurve, Curves.linear);
+    });
+
+    test('copyWith on v0.2.0 feature flags', () {
+      const original = SplitViewTheme();
+      final updated = original.copyWith(
+        deferResize: true,
+        shieldPlatformViews: false,
+        shieldColor: const Color(0x88000000),
+      );
+      expect(updated.deferResize, true);
+      expect(updated.shieldPlatformViews, false);
+      expect(updated.shieldColor, const Color(0x88000000));
+    });
+
+    test('copyWith on behavior flags', () {
+      const original = SplitViewTheme();
+      final updated = original.copyWith(
+        enabled: false,
+        resetOnDoubleTap: false,
+      );
+      expect(updated.enabled, false);
+      expect(updated.resetOnDoubleTap, false);
     });
 
     test('copyWith does not mutate the original', () {
@@ -323,6 +473,7 @@ void main() {
       expect(t.resetOnDoubleTap, true);
       expect(t.deferResize, false);
       expect(t.shieldPlatformViews, true);
+      expect(t.shieldColor, isNull);
     });
 
     test('defaultTheme == const SplitViewTheme()', () {

@@ -45,26 +45,30 @@ void main() {
 
   group('Vertical ignores RTL', () {
     testWidgets('LTR: first on top', (tester) async {
-      await tester.pumpWidget(wrap(
-        const SplitView(
-          direction: SplitDirection.vertical,
-          first: SizedBox(key: kFirstKey),
-          second: SizedBox(key: kSecondKey),
+      await tester.pumpWidget(
+        wrap(
+          const SplitView(
+            direction: SplitDirection.vertical,
+            first: SizedBox(key: kFirstKey),
+            second: SizedBox(key: kSecondKey),
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       expect(firstRect(tester).top, lessThan(secondRect(tester).top));
     });
 
     testWidgets('RTL: still first on top', (tester) async {
-      await tester.pumpWidget(wrap(
-        const SplitView(
-          direction: SplitDirection.vertical,
-          first: SizedBox(key: kFirstKey),
-          second: SizedBox(key: kSecondKey),
+      await tester.pumpWidget(
+        wrap(
+          const SplitView(
+            direction: SplitDirection.vertical,
+            first: SizedBox(key: kFirstKey),
+            second: SizedBox(key: kSecondKey),
+          ),
+          dir: TextDirection.rtl,
         ),
-        dir: TextDirection.rtl,
-      ));
+      );
       await tester.pumpAndSettle();
       expect(firstRect(tester).top, lessThan(secondRect(tester).top));
     });
@@ -72,18 +76,23 @@ void main() {
     testWidgets('vertical reverse=true: first on bottom in both dirs',
         (tester) async {
       for (final dir in [TextDirection.ltr, TextDirection.rtl]) {
-        await tester.pumpWidget(wrap(
-          const SplitView(
-            direction: SplitDirection.vertical,
-            reverse: true,
-            first: SizedBox(key: kFirstKey),
-            second: SizedBox(key: kSecondKey),
+        await tester.pumpWidget(
+          wrap(
+            const SplitView(
+              direction: SplitDirection.vertical,
+              reverse: true,
+              first: SizedBox(key: kFirstKey),
+              second: SizedBox(key: kSecondKey),
+            ),
+            dir: dir,
           ),
-          dir: dir,
-        ));
+        );
         await tester.pumpAndSettle();
-        expect(firstRect(tester).top, greaterThan(secondRect(tester).top),
-            reason: 'failed for dir=$dir');
+        expect(
+          firstRect(tester).top,
+          greaterThan(secondRect(tester).top),
+          reason: 'failed for dir=$dir',
+        );
       }
     });
   });

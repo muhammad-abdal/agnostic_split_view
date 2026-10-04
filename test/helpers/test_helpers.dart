@@ -34,17 +34,29 @@ Future<TestGesture> startDividerDrag(WidgetTester tester) async {
   return gesture;
 }
 
+/// Moves [gesture] by [totalDelta] in [steps] equal moves, pumping
+/// after each. Use this to test mid-drag state — a single `moveBy`
+/// is consumed by `kTouchSlop` and produces no drag update.
+Future<void> moveDragInSteps(
+  WidgetTester tester,
+  TestGesture gesture,
+  Offset totalDelta, {
+  int steps = 10,
+}) async {
+  final step = totalDelta / steps.toDouble();
+  for (var i = 0; i < steps; i++) {
+    await gesture.moveBy(step);
+    await tester.pump();
+  }
+}
+
 Future<void> dragDivider(
   WidgetTester tester,
   Offset totalDelta, {
   int steps = 10,
 }) async {
   final gesture = await startDividerDrag(tester);
-  final step = totalDelta / steps.toDouble();
-  for (var i = 0; i < steps; i++) {
-    await gesture.moveBy(step);
-    await tester.pump();
-  }
+  await moveDragInSteps(tester, gesture, totalDelta, steps: steps);
   await gesture.up();
   await tester.pumpAndSettle();
 }
@@ -55,3 +67,17 @@ Rect secondRect(WidgetTester tester) => tester.getRect(find.byKey(kSecondKey));
 
 Rect dividerRect(WidgetTester tester) =>
     tester.getRect(find.byType(SplitDivider));
+
+/// Returns the first ancestor of [childKey] matching widget type [T],
+/// or null if none exists. Useful for asserting RepaintBoundary
+/// wrapping introduced by `isolatePanes`.
+Finder? findAncestorOfType<T extends Widget>(
+  WidgetTester tester,
+  Key childKey,
+) {
+  final matches = find.ancestor(
+    of: find.byKey(childKey),
+    matching: find.byType(T),
+  );
+  return matches.evaluate().isEmpty ? null : matches;
+}

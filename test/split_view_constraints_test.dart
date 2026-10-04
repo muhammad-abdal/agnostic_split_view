@@ -60,6 +60,24 @@ void main() {
       controller.dispose();
     });
 
+    testWidgets('maxSecondPaneSize is respected', (tester) async {
+      final controller = SplitViewController(initialFraction: 0.05);
+      await tester.pumpWidget(
+        wrap(
+          SplitView(
+            direction: SplitDirection.horizontal,
+            controller: controller,
+            maxSecondPaneSize: 200,
+            first: const SizedBox(key: kFirstKey),
+            second: const SizedBox(key: kSecondKey),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(secondRect(tester).width, lessThanOrEqualTo(200));
+      controller.dispose();
+    });
+
     testWidgets('min+max give exact range', (tester) async {
       final controller = SplitViewController(initialFraction: 0.5);
       await tester.pumpWidget(
@@ -118,6 +136,129 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(firstRect(tester).height, lessThanOrEqualTo(100));
+      controller.dispose();
+    });
+
+    // v0.2.0 — interaction with collapse.
+
+    testWidgets('minFirstPaneSize yields to explicit collapse', (tester) async {
+      final controller = SplitViewController(initialFraction: 0.5);
+      await tester.pumpWidget(
+        wrap(
+          SizedBox(
+            width: 400,
+            height: 300,
+            child: SplitView(
+              direction: SplitDirection.horizontal,
+              controller: controller,
+              minFirstPaneSize: 150,
+              firstCollapsible: true,
+              first: const SizedBox(key: kFirstKey),
+              second: const SizedBox(key: kSecondKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      controller.collapseFirst(animate: false);
+      await tester.pumpAndSettle();
+
+      expect(
+        firstRect(tester).width,
+        0,
+        reason: 'v0.2.0: collapse must override min size.',
+      );
+      controller.dispose();
+    });
+
+    testWidgets('minSecondPaneSize yields to explicit collapse',
+        (tester) async {
+      final controller = SplitViewController(initialFraction: 0.5);
+      await tester.pumpWidget(
+        wrap(
+          SizedBox(
+            width: 400,
+            height: 300,
+            child: SplitView(
+              direction: SplitDirection.horizontal,
+              controller: controller,
+              minSecondPaneSize: 150,
+              secondCollapsible: true,
+              first: const SizedBox(key: kFirstKey),
+              second: const SizedBox(key: kSecondKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      controller.collapseSecond(animate: false);
+      await tester.pumpAndSettle();
+
+      expect(secondRect(tester).width, 0);
+      controller.dispose();
+    });
+
+    testWidgets('constraints still enforce when pane is not collapsed',
+        (tester) async {
+      final controller = SplitViewController(initialFraction: 0.5);
+      await tester.pumpWidget(
+        wrap(
+          SizedBox(
+            width: 400,
+            height: 300,
+            child: SplitView(
+              direction: SplitDirection.horizontal,
+              controller: controller,
+              minFirstPaneSize: 120,
+              firstCollapsible: false,
+              first: const SizedBox(key: kFirstKey),
+              second: const SizedBox(key: kSecondKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await dragDivider(tester, const Offset(-400, 0));
+
+      expect(
+        firstRect(tester).width,
+        greaterThanOrEqualTo(120),
+        reason: 'Without collapse, min size must still apply.',
+      );
+      controller.dispose();
+    });
+
+    testWidgets('expand after collapse restores the min-clamped size',
+        (tester) async {
+      final controller = SplitViewController(initialFraction: 0.5);
+      await tester.pumpWidget(
+        wrap(
+          SizedBox(
+            width: 400,
+            height: 300,
+            child: SplitView(
+              direction: SplitDirection.horizontal,
+              controller: controller,
+              minFirstPaneSize: 100,
+              firstCollapsible: true,
+              first: const SizedBox(key: kFirstKey),
+              second: const SizedBox(key: kSecondKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      controller.collapseFirst(animate: false);
+      await tester.pumpAndSettle();
+      controller.expandFirst(animate: false);
+      await tester.pumpAndSettle();
+
+      // Restored to 0.5 * 388 = 194, well above min.
+      expect(firstRect(tester).width, greaterThanOrEqualTo(100));
       controller.dispose();
     });
   });
